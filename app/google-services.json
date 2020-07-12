@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "344743360816",
+    "firebase_url": "https://fullbinz.firebaseio.com",
+    "project_id": "fullbinz",
+    "storage_bucket": "fullbinz.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:344743360816:android:a9249ceafe8a230d71b0f5",
+        "android_client_info": {
+          "package_name": "com.example.fullbinz"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "344743360816-93d3l3vb71ts5s1jmo6a35bgmnaehtf2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.fullbinz",
+            "certificate_hash": "1e0320dfeb490f3b3d2743c2dd8112b56bf7e314"
+          }
+        },
+        {
+          "client_id": "344743360816-q2in35m39ho8bmhcsbvu9csiip5ligup.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAqf-ryn1MuNm6RUwr1ixj8yWrZZ7j5JNg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "344743360816-q2in35m39ho8bmhcsbvu9csiip5ligup.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
