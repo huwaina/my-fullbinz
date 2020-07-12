@@ -14,6 +14,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
@@ -33,10 +34,26 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.example.fullbinz.Model.PointValue;
 import com.example.fullbinz.Model.TongSampah;
 import com.example.fullbinz.R;
 import com.example.fullbinz.UI.CustomInfoWindow;
 import com.example.fullbinz.Util.Constants;
+import com.example.fullbinz.Util.XYMarkerView;
+import com.github.mikephil.charting.charts.BarChart;
+import com.github.mikephil.charting.components.Description;
+import com.github.mikephil.charting.components.Legend;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.components.YAxis;
+import com.github.mikephil.charting.data.BarData;
+import com.github.mikephil.charting.data.BarDataSet;
+import com.github.mikephil.charting.data.BarEntry;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.formatter.ValueFormatter;
+import com.github.mikephil.charting.highlight.Highlight;
+import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
+import com.github.mikephil.charting.utils.ColorTemplate;
+import com.github.mikephil.charting.utils.MPPointF;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -47,16 +64,26 @@ import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnInfoWindowClickListener,
-GoogleMap.OnMarkerClickListener {
+GoogleMap.OnMarkerClickListener, OnChartValueSelectedListener {
 
     private GoogleMap mMap;
     private LocationManager locationManager;
@@ -65,6 +92,12 @@ GoogleMap.OnMarkerClickListener {
     private AlertDialog.Builder dialogBuilder;
     private AlertDialog dialog;
     private Button showBinsBtn;
+    private BarChart mBarChart;
+    private TextView popList;
+
+    FirebaseDatabase database;
+    DatabaseReference referenceTong, referenceChartTable;
+    private List<TongSampah> tongs = new ArrayList<>();
 
 
     @Override
@@ -87,10 +120,8 @@ GoogleMap.OnMarkerClickListener {
         });
 
         queue = Volley.newRequestQueue(this);
-
         getTongSampahs();
     }
-
 
     /**
      * Manipulates the map once available.
@@ -184,78 +215,135 @@ GoogleMap.OnMarkerClickListener {
 
     private void getTongSampahs() {
 
-        final TongSampah tongSampah = new TongSampah();
+        database = FirebaseDatabase.getInstance();
+        referenceTong = database.getReference("tong");
 
-        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, Constants.URL,
-                new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-
-                        try {
-                            JSONArray jsonArray = response.getJSONArray("tong");
-                            for (int i = 0; i < Constants.LIMIT; i++){
-                                JSONObject tong = jsonArray.getJSONObject(i);
-
-                                double lat = tong.getDouble("latitude");
-                                double lon = tong.getDouble("longitude");
-
-//                                Log.d("Coordinate: ", lat + ", " + lon);
-
-                                tongSampah.setPlace(tong.getString("place"));
-                                tongSampah.setStatus(tong.getString("status"));
-                                tongSampah.setLat(lat);
-                                tongSampah.setLon(lon);
-                                tongSampah.setTime(tong.getLong("time"));
-                                tongSampah.setDetailLink(tong.getString("detail"));
-
-
-                                java.text.DateFormat dateFormat = java.text.DateFormat.getDateInstance();
-                                String formattedDate = dateFormat.format(new Date(tongSampah.getTime()));
-
-                                java.text.DateFormat timeFormat = java.text.DateFormat.getTimeInstance();
-                                String formattedTime = timeFormat.format(new Date(tongSampah.getTime()));
-
-//                                Log.d("Time: ", formattedTime);
-
-                                MarkerOptions markerOptions = new MarkerOptions();
-
-//                                markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN));
-                                markerOptions.icon(bitmapDescriptorFromVector(getApplicationContext(), R.drawable.ic_delete_green_24dp));
-                                markerOptions.title(tongSampah.getPlace());
-                                markerOptions.position(new LatLng(lat, lon));
-                                markerOptions.snippet("Status: " + tongSampah.getStatus() + "\n"
-                                + "Date: " + formattedDate + "\n" + "Time: " + formattedTime);
-
-                                //Change color of bins according to status
-
-                                if ((tongSampah.getStatus().equals("Full"))) {
-                                    CircleOptions circleOptions = new CircleOptions();
-                                    circleOptions.center(new LatLng(tongSampah.getLat(), tongSampah.getLon()));
-                                    circleOptions.radius(30000);
-                                    circleOptions.strokeWidth(3.6f);
-                                    circleOptions.fillColor(Color.RED);
-                                    markerOptions.icon(bitmapDescriptorFromVector(getApplicationContext(), R.drawable.ic_delete_red_24dp));
-                                }
-
-                                Marker marker = mMap.addMarker(markerOptions);
-                                marker.setTag(tongSampah.getDetailLink());
-
-                                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat, lon), 18));
-
-                            }
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-
-                    }
-                }, new Response.ErrorListener() {
+        referenceTong.addValueEventListener(new ValueEventListener() {
             @Override
-            public void onErrorResponse(VolleyError error) {
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                List<String> keys = new ArrayList<>();
+
+                for (DataSnapshot keyNode : snapshot.getChildren()) {
+                    keys.add(keyNode.getKey());
+                    TongSampah tongSampah = keyNode.getValue(TongSampah.class);
+                    tongs.add(tongSampah);
+
+//                    Log.d("Coordinate: ", tongSampah.getLatitude() + ", " + tongSampah.getLongitude());
+//                    Log.d("Place: ", tongSampah.getPlace());
+//                    Log.d("Statusah: ", tongSampah.getStatus());
+//                    Log.d("Last collected: ", tongSampah.getLastcollected());
+//                    Log.d("Last updated: ", tongSampah.getLastupdated());
+//                    Log.d("By: ", tongSampah.getBy());
+
+                    double lat = tongSampah.getLatitude();
+                    double lon = tongSampah.getLongitude();
+
+                    MarkerOptions markerOptions = new MarkerOptions();
+
+                    markerOptions.icon(bitmapDescriptorFromVector(getApplicationContext(), R.drawable.ic_delete_green_24dp));
+                    markerOptions.title(tongSampah.getPlace());
+                    markerOptions.position(new LatLng(lat, lon));
+                    markerOptions.snippet("Status: " + tongSampah.getStatus() + "\n"
+                            + "Last updated: " + tongSampah.getLastupdated());
+
+                    //Change color of bins according to status
+                    if ((tongSampah.getStatus().equals("Full"))) {
+                        CircleOptions circleOptions = new CircleOptions();
+                        circleOptions.center(new LatLng(tongSampah.getLatitude(), tongSampah.getLongitude()));
+                        circleOptions.radius(30000);
+                        circleOptions.strokeWidth(3.6f);
+                        circleOptions.fillColor(Color.RED);
+                        markerOptions.icon(bitmapDescriptorFromVector(getApplicationContext(), R.drawable.ic_delete_red_24dp));
+                    }
+
+                    Marker marker = mMap.addMarker(markerOptions);
+                    marker.setTag(keyNode.getKey());
+
+                    mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat, lon), 18));
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
 
             }
         });
-        queue.add(jsonObjectRequest);
     }
+
+
+//    private void getTongSampah(){
+//        final TongSampah tongSampah = new TongSampah();
+//
+//        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, Constants.URL,
+//                new Response.Listener<JSONObject>() {
+//                    @Override
+//                    public void onResponse(JSONObject response) {
+//
+//                        try {
+//                            JSONArray jsonArray = response.getJSONArray("tong");
+//                            for (int i = 0; i < Constants.LIMIT; i++){
+//                                JSONObject tong = jsonArray.getJSONObject(i);
+//
+//                                double lat = tong.getDouble("latitude");
+//                                double lon = tong.getDouble("longitude");
+//
+////                                Log.d("Coordinate: ", lat + ", " + lon);
+//
+//                                tongSampah.setPlace(tong.getString("place"));
+//                                tongSampah.setStatus(tong.getString("status"));
+//                                tongSampah.setLat(lat);
+//                                tongSampah.setLon(lon);
+//                                tongSampah.setTime(tong.getLong("time"));
+//                                tongSampah.setDetailLink(tong.getString("detail"));
+//
+//
+//                                java.text.DateFormat dateFormat = java.text.DateFormat.getDateInstance();
+//                                String formattedDate = dateFormat.format(new Date(tongSampah.getTime()));
+//
+//                                java.text.DateFormat timeFormat = java.text.DateFormat.getTimeInstance();
+//                                String formattedTime = timeFormat.format(new Date(tongSampah.getTime()));
+//
+////                                Log.d("Time: ", formattedTime);
+//
+//                                MarkerOptions markerOptions = new MarkerOptions();
+//
+////                                markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN));
+//                                markerOptions.icon(bitmapDescriptorFromVector(getApplicationContext(), R.drawable.ic_delete_green_24dp));
+//                                markerOptions.title(tongSampah.getPlace());
+//                                markerOptions.position(new LatLng(lat, lon));
+//                                markerOptions.snippet("Status: " + tongSampah.getStatus() + "\n"
+//                                + "Date: " + formattedDate + "\n" + "Time: " + formattedTime);
+//
+//                                //Change color of bins according to status
+//
+//                                if ((tongSampah.getStatus().equals("Full"))) {
+//                                    CircleOptions circleOptions = new CircleOptions();
+//                                    circleOptions.center(new LatLng(tongSampah.getLat(), tongSampah.getLon()));
+//                                    circleOptions.radius(30000);
+//                                    circleOptions.strokeWidth(3.6f);
+//                                    circleOptions.fillColor(Color.RED);
+//                                    markerOptions.icon(bitmapDescriptorFromVector(getApplicationContext(), R.drawable.ic_delete_red_24dp));
+//                                }
+//
+//                                Marker marker = mMap.addMarker(markerOptions);
+//                                marker.setTag(tongSampah.getDetailLink());
+//
+//                                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat, lon), 18));
+//
+//                            }
+//                        } catch (JSONException e) {
+//                            e.printStackTrace();
+//                        }
+//
+//                    }
+//                }, new Response.ErrorListener() {
+//            @Override
+//            public void onErrorResponse(VolleyError error) {
+//
+//            }
+//        });
+//        queue.add(jsonObjectRequest);
+//    }
 
     @Override
     public void onInfoWindowClick(Marker marker) {
@@ -265,46 +353,72 @@ GoogleMap.OnMarkerClickListener {
 
     }
 
-    private void getTongDetails(String url) {
+    private void getTongDetails(String tag){
+        dialogBuilder = new AlertDialog.Builder(MapsActivity.this);
+        View view = getLayoutInflater().inflate(R.layout.popup, null);
 
-        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET,
-                url, new Response.Listener<JSONObject>() {
+        final Button  collectButton = (Button) view.findViewById(R.id.collectBtn);
+        Button dismissButtonTop = (Button) view.findViewById(R.id.dismissPopTop);
+        popList = (TextView) view.findViewById(R.id.popList);
+        mBarChart = (BarChart) view.findViewById(R.id.barchart);
+        barchartSettings();
+
+        referenceTong = database.getReference("tong").child(tag);
+        referenceChartTable = database.getReference("chartTable").child(tag);
+
+        referenceChartTable.addValueEventListener(new ValueEventListener() {
             @Override
-            public void onResponse(JSONObject response) {
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                List<BarEntry> barEntries = new ArrayList<>();
 
-                int aras = 0;
-                int temperature = 0;
+                for(DataSnapshot myDataSnapshot : snapshot.getChildren()){
+                    PointValue pointValue = myDataSnapshot.getValue(PointValue.class);
+                    barEntries.add(new BarEntry(pointValue.getxValue(), pointValue.getyValue()));
+                }
+
+                BarDataSet barDataSet = new BarDataSet(barEntries, "Level");
+                BarData barData = new BarData(barDataSet);
+                barData.setBarWidth(0.5f);
+
+                mBarChart.setData(barData);
+                mBarChart.invalidate();
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
+
+        referenceTong.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
                 StringBuilder stringBuilder = new StringBuilder();
 
-                dialogBuilder = new AlertDialog.Builder(MapsActivity.this);
-                View view = getLayoutInflater().inflate(R.layout.popup, null);
+                final TongSampah tongSampah = snapshot.getValue(TongSampah.class);
+                tongs.add(tongSampah);
 
-                Button  collectButton = (Button) view.findViewById(R.id.collectBtn);
-                Button dismissButtonTop = (Button) view.findViewById(R.id.dismissPopTop);
-                TextView popList = (TextView) view.findViewById(R.id.popList);
-                WebView htmlPop = (WebView) view.findViewById(R.id.htmlWebview);
+                Log.d("Coordinate: ", tongSampah.getLatitude() + ", " + tongSampah.getLongitude());
+                Log.d("Place: ", tongSampah.getPlace());
+                Log.d("Statusah: ", tongSampah.getStatus());
+                Log.d("Last collected: ", tongSampah.getLastcollected());
+                Log.d("Last updated: ", tongSampah.getLastupdated());
+                Log.d("By: ", tongSampah.getBy());
 
-                try {
-                    JSONObject levelObj = response.getJSONObject("level");
+                stringBuilder.append(
+                        "Location: " + tongSampah.getPlace() + "\n" +
+                        "Status: " + tongSampah.getStatus() + "\n" +
+                        "Last collected: " + tongSampah.getLastcollected() + "\n" +
+                        "Collected by: " + tongSampah.getBy() + "\n");
 
-                    aras = levelObj.getInt("aras");
-                    temperature = levelObj.getInt("suhu");
+                stringBuilder.append("\n");
 
-                    stringBuilder.append("Location: " + "\n" +
-                                    "Last collected: " + "\n" +
-                                    "Level: " + aras + "\n" +
-                                    "Temperature: " + temperature);
+                popList.setText(stringBuilder);
 
-                    stringBuilder.append("\n\n");
-
-                    popList.setText(stringBuilder);
-
-                    collectButton.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-
-                            // letak sini, if level empty, then do THIS:
-
+                collectButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        if ((tongSampah.getStatus().equals("Empty"))){
                             AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
                             builder.setCancelable(true);
                             builder.setTitle("Bin level is low or empty");
@@ -319,7 +433,6 @@ GoogleMap.OnMarkerClickListener {
                                         }
                                     });
 
-
                             builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
                                 @Override
                                 public void onClick(DialogInterface dialog, int which) {
@@ -330,62 +443,224 @@ GoogleMap.OnMarkerClickListener {
 
                             AlertDialog dialog = builder.create();
                             dialog.show();
-
-                            //else, just straight go to route
-                        }
-                    });
-
-                    dismissButtonTop.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
+                        } else {
+                            Toast.makeText(getApplicationContext(), "Routing to bin now",
+                                    Toast.LENGTH_LONG).show();
                             dialog.dismiss();
+                            //insert route to bin activity
                         }
-                    });
-
-                    dialogBuilder.setView(view);
-                    dialog = dialogBuilder.create();
-                    dialog.show();
-
-//                    Log.d("Level:", String.valueOf(aras));
-
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-
+                    }
+                });
             }
-        }, new Response.ErrorListener() {
+
             @Override
-            public void onErrorResponse(VolleyError error) {
+            public void onCancelled(@NonNull DatabaseError error) {
 
             }
         });
-        queue.add(jsonObjectRequest);
 
+        dismissButtonTop.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+            }
+        });
 
+        dialogBuilder.setView(view);
+        dialog = dialogBuilder.create();
+        dialog.show();
     }
 
-//    public void getMoreDetails(String url) {
-//        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url,
-//                new Response.Listener<JSONObject>() {
-//                    @Override
-//                    public void onResponse(JSONObject response) {
+
+
+//    private void getTongDetails(String url) {
+//
+//        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET,
+//                url, new Response.Listener<JSONObject>() {
+//            @Override
+//            public void onResponse(JSONObject response) {
+//
+//                int aras = 0;
+//                int temperature = 0;
+//                StringBuilder stringBuilder = new StringBuilder();
+//
+//                dialogBuilder = new AlertDialog.Builder(MapsActivity.this);
+//                View view = getLayoutInflater().inflate(R.layout.popup, null);
+//
+//                Button  collectButton = (Button) view.findViewById(R.id.collectBtn);
+//                Button dismissButtonTop = (Button) view.findViewById(R.id.dismissPopTop);
+//                TextView popList = (TextView) view.findViewById(R.id.popList);
+//                WebView htmlPop = (WebView) view.findViewById(R.id.htmlWebview);
+//
+//                try {
+//                    JSONObject levelObj = response.getJSONObject("level");
+//
+//                    aras = levelObj.getInt("aras");
+//                    temperature = levelObj.getInt("suhu");
+//
+//                    stringBuilder.append("Location: " + "\n" +
+//                                    "Last collected: " + "\n" +
+//                                    "Level: " + aras + "\n" +
+//                                    "Temperature: " + temperature);
+//
+//                    stringBuilder.append("\n\n");
+//
+//                    popList.setText(stringBuilder);
+//
+//                    collectButton.setOnClickListener(new View.OnClickListener() {
+//                        @Override
+//                        public void onClick(View v) {
+//
+//                            // letak sini, if level empty, then do THIS:
+//
+//                            AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
+//                            builder.setCancelable(true);
+//                            builder.setTitle("Bin level is low or empty");
+//                            builder.setMessage("Are you sure?");
+//                            builder.setPositiveButton("Yes",
+//                                    new DialogInterface.OnClickListener() {
+//                                        @Override
+//                                        public void onClick(DialogInterface dialog, int which) {
+//                                            Toast.makeText(getApplicationContext(), "Routing to bin now",
+//                                                    Toast.LENGTH_LONG).show();
+//                                            //insert route to bin activity
+//                                        }
+//                                    });
 //
 //
+//                            builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+//                                @Override
+//                                public void onClick(DialogInterface dialog, int which) {
+//                                }
+//                            });
 //
+//                            dialog.dismiss();
 //
+//                            AlertDialog dialog = builder.create();
+//                            dialog.show();
 //
-//                    }
-//                }, new Response.ErrorListener() {
+//                            //else, just straight go to route
+//                        }
+//                    });
+//
+//                    dismissButtonTop.setOnClickListener(new View.OnClickListener() {
+//                        @Override
+//                        public void onClick(View v) {
+//                            dialog.dismiss();
+//                        }
+//                    });
+//
+//                    dialogBuilder.setView(view);
+//                    dialog = dialogBuilder.create();
+//                    dialog.show();
+//
+////                    Log.d("Level:", String.valueOf(aras));
+//
+//                } catch (JSONException e) {
+//                    e.printStackTrace();
+//                }
+//
+//            }
+//        }, new Response.ErrorListener() {
 //            @Override
 //            public void onErrorResponse(VolleyError error) {
 //
 //            }
 //        });
 //        queue.add(jsonObjectRequest);
+//
+//
 //    }
+
+    private void barchartSettings() {
+        mBarChart.setTouchEnabled(true);
+        mBarChart.setDragDecelerationFrictionCoef(0.9f);
+
+        // enable scaling and dragging
+        mBarChart.setDragEnabled(true);
+        mBarChart.setScaleEnabled(true);
+        mBarChart.setDrawGridBackground(false);
+        mBarChart.setHighlightPerDragEnabled(true);
+
+        // set an alternative background color
+        mBarChart.setBackgroundColor(Color.WHITE);
+        mBarChart.setViewPortOffsets(0f, 0f, 0f, 0f);
+
+        mBarChart.setDrawBorders(true);
+
+        XAxis xAxis = mBarChart.getXAxis();
+        xAxis.setPosition(XAxis.XAxisPosition.TOP_INSIDE);
+        xAxis.setTextSize(10f);
+        xAxis.setTextColor(Color.WHITE);
+        xAxis.setDrawAxisLine(false);
+        xAxis.setDrawGridLines(true);
+        xAxis.setTextColor(Color.rgb(255, 192, 56));
+        xAxis.setCenterAxisLabels(true);
+        xAxis.setLabelCount(6, true);
+        xAxis.setGranularity(1f); // one hour
+        ValueFormatter xAxisFormatter = new ValueFormatter() {
+            private final SimpleDateFormat mFormat = new SimpleDateFormat("dd MMM HH:mm", Locale.ENGLISH);
+
+            @Override
+            public String getFormattedValue(float value) {
+
+                long millis = TimeUnit.HOURS.toMillis((long) value);
+                return mFormat.format(new Date(millis));
+            }
+        };
+        xAxis.setValueFormatter(xAxisFormatter);
+
+        YAxis leftAxis = mBarChart.getAxisLeft();
+        leftAxis.setPosition(YAxis.YAxisLabelPosition.INSIDE_CHART);
+        leftAxis.setTextColor(ColorTemplate.getHoloBlue());
+        leftAxis.setDrawGridLines(false);
+        leftAxis.setDrawLabels(false);
+        leftAxis.setDrawAxisLine(false);
+        leftAxis.setGranularityEnabled(true);
+        leftAxis.setYOffset(-9f);
+
+        YAxis rightAxis = mBarChart.getAxisRight();
+        rightAxis.setEnabled(false);
+
+        Legend legend = mBarChart.getLegend();
+        legend.setEnabled(false);
+
+        Description description = mBarChart.getDescription();
+        description.setEnabled(false);
+
+        XYMarkerView mv = new XYMarkerView(this, xAxisFormatter);
+        mv.setChartView(mBarChart); // For bounds control
+        mBarChart.setMarker(mv); // Set the marker to the chart
+    }
 
     @Override
     public boolean onMarkerClick(Marker marker) {
         return false;
+    }
+
+    private final RectF onValueSelectedRectF = new RectF();
+
+    @Override
+    public void onValueSelected(Entry e, Highlight h) {
+        if (e == null)
+            return;
+
+        RectF bounds = onValueSelectedRectF;
+        mBarChart.getBarBounds((BarEntry) e, bounds);
+        MPPointF position = mBarChart.getPosition(e, YAxis.AxisDependency.LEFT);
+
+        Log.i("bounds", bounds.toString());
+        Log.i("position", position.toString());
+
+        Log.i("x-index",
+                "low: " + mBarChart.getLowestVisibleX() + ", high: "
+                        + mBarChart.getHighestVisibleX());
+
+        MPPointF.recycleInstance(position);
+    }
+
+    @Override
+    public void onNothingSelected() {
+
     }
 }

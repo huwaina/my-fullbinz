@@ -43,19 +43,19 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"/>
 
-                <WebView
-                    android:id="@+id/htmlWebview"
+                <com.github.mikephil.charting.charts.BarChart
+                    android:id="@+id/barchart"
                     android:layout_below="@id/popList"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content">
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
 
-                </WebView>
+                </com.github.mikephil.charting.charts.BarChart>
 
                 <Button
                     android:id="@+id/collectBtn"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_below="@+id/htmlWebview"
+                    android:layout_below="@+id/barchart"
                     android:layout_centerHorizontal="true"
                     android:layout_marginTop="0dp"
                     android:background="@color/colorPrimaryDark"

@@ -73,9 +73,9 @@ public class BinsListActivity extends AppCompatActivity {
 
                                 tongSampah.setPlace(tong.getString("place"));
                                 tongSampah.setStatus(tong.getString("status"));
-                                tongSampah.setLat(lat);
-                                tongSampah.setLon(lon);
-                                tongSampah.setTime(tong.getLong("time"));
+                                tongSampah.setLatitude(lat);
+                                tongSampah.setLongitude(lon);
+//                                tongSampah.setTime(tong.getLong("time"));
 
                                 arrayList.add(tongSampah.getPlace());
                             }
