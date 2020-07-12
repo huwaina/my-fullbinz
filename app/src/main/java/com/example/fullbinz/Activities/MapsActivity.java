@@ -471,8 +471,6 @@ GoogleMap.OnMarkerClickListener, OnChartValueSelectedListener {
         dialog.show();
     }
 
-
-
 //    private void getTongDetails(String url) {
 //
 //        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET,
@@ -594,7 +592,7 @@ GoogleMap.OnMarkerClickListener, OnChartValueSelectedListener {
         xAxis.setTextColor(Color.WHITE);
         xAxis.setDrawAxisLine(false);
         xAxis.setDrawGridLines(true);
-        xAxis.setTextColor(Color.rgb(255, 192, 56));
+        xAxis.setTextColor(Color.rgb(0, 0, 0));
         xAxis.setCenterAxisLabels(true);
         xAxis.setLabelCount(6, true);
         xAxis.setGranularity(1f); // one hour

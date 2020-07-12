@@ -19,12 +19,13 @@
 
                 <TextView
                     android:id="@+id/popTitle"
-                    android:layout_centerHorizontal="true"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:text="Bin Activities"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
+                    android:layout_height="wrap_content"
+                    android:layout_centerHorizontal="true"
+                    android:layout_marginBottom="10dp"
+                    android:text="Bin Activities"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
 
                 <Button
                     android:id="@+id/dismissPopTop"
@@ -45,9 +46,10 @@
 
                 <com.github.mikephil.charting.charts.BarChart
                     android:id="@+id/barchart"
-                    android:layout_below="@id/popList"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent">
+                    android:layout_height="match_parent"
+                    android:layout_below="@id/popList"
+                    android:minHeight="300dp">
 
                 </com.github.mikephil.charting.charts.BarChart>
 
@@ -57,7 +59,7 @@
                     android:layout_height="wrap_content"
                     android:layout_below="@+id/barchart"
                     android:layout_centerHorizontal="true"
-                    android:layout_marginTop="0dp"
+                    android:layout_marginTop="20dp"
                     android:background="@color/colorPrimaryDark"
                     android:text="Collect"
                     android:textColor="@android:color/white" />
