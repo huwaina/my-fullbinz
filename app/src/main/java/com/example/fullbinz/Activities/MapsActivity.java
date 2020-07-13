@@ -34,6 +34,11 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.directions.route.AbstractRouting;
+import com.directions.route.Route;
+import com.directions.route.RouteException;
+import com.directions.route.Routing;
+import com.directions.route.RoutingListener;
 import com.example.fullbinz.Model.PointValue;
 import com.example.fullbinz.Model.TongSampah;
 import com.example.fullbinz.R;
@@ -54,6 +59,9 @@ import com.github.mikephil.charting.highlight.Highlight;
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 import com.github.mikephil.charting.utils.ColorTemplate;
 import com.github.mikephil.charting.utils.MPPointF;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -64,6 +72,9 @@ import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -83,7 +94,7 @@ import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnInfoWindowClickListener,
-GoogleMap.OnMarkerClickListener, OnChartValueSelectedListener {
+GoogleMap.OnMarkerClickListener, OnChartValueSelectedListener, GoogleApiClient.OnConnectionFailedListener, RoutingListener {
 
     private GoogleMap mMap;
     private LocationManager locationManager;
@@ -99,6 +110,10 @@ GoogleMap.OnMarkerClickListener, OnChartValueSelectedListener {
     DatabaseReference referenceTong, referenceChartTable;
     private List<TongSampah> tongs = new ArrayList<>();
 
+    private List<Polyline> polylines = null;
+    LatLng myLocation;
+    LatLng startPoint = null;
+    LatLng endPoint = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -171,18 +186,11 @@ GoogleMap.OnMarkerClickListener, OnChartValueSelectedListener {
                 ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
             } else {
 //                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
-//                Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
                 mMap.setMyLocationEnabled(true);
-
-//                if(location!= null){
-//                    LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-//                    mMap.addMarker(new MarkerOptions()
-//                            .position(latLng)
-//                            .icon(BitmapDescriptorFactory.)
-//                            .title("Bin @ Cafe FKAB"));
-//                            .snippet("Statu   s: Empty"));
-//                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 17));
-//                }
+                if(location!= null){
+                    myLocation = new LatLng(location.getLatitude(), location.getLongitude());
+                }
             }
         }
     }
@@ -415,6 +423,8 @@ GoogleMap.OnMarkerClickListener, OnChartValueSelectedListener {
 
                 popList.setText(stringBuilder);
 
+                final LatLng destination = new LatLng(tongSampah.getLatitude(), tongSampah.getLongitude());
+
                 collectButton.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
@@ -430,6 +440,7 @@ GoogleMap.OnMarkerClickListener, OnChartValueSelectedListener {
                                             Toast.makeText(getApplicationContext(), "Routing to bin now",
                                                     Toast.LENGTH_LONG).show();
                                             //insert route to bin activity
+                                            findRoutes(myLocation, destination);
                                         }
                                     });
 
@@ -469,6 +480,21 @@ GoogleMap.OnMarkerClickListener, OnChartValueSelectedListener {
         dialogBuilder.setView(view);
         dialog = dialogBuilder.create();
         dialog.show();
+    }
+
+    private void findRoutes(LatLng startPoint, LatLng endPoint) {
+        if(startPoint == null || endPoint == null)
+            Toast.makeText(MapsActivity.this,"Unable to get location",Toast.LENGTH_LONG).show();
+        else {
+            Routing routing = new Routing.Builder()
+                    .travelMode(AbstractRouting.TravelMode.DRIVING)
+                    .withListener(this)
+                    .alternativeRoutes(true)
+                    .waypoints(startPoint, endPoint)
+                    .key("AIzaSyA0MCfh7S580h7m-Fmqm3lfI68IUqw83Ak")  //also define your api key here.
+                    .build();
+            routing.execute();
+        }
     }
 
 //    private void getTongDetails(String url) {
@@ -662,5 +688,70 @@ GoogleMap.OnMarkerClickListener, OnChartValueSelectedListener {
     @Override
     public void onNothingSelected() {
 
+    }
+
+    @Override
+    public void onRoutingFailure(RouteException e) {
+        View parentLayout = findViewById(android.R.id.content);
+        Snackbar snackbar= Snackbar.make(parentLayout, e.toString(), Snackbar.LENGTH_LONG);
+        snackbar.show();
+    }
+
+    @Override
+    public void onRoutingStart() {
+        Toast.makeText(MapsActivity.this,"Finding Route...",Toast.LENGTH_LONG).show();
+    }
+
+    @Override
+    public void onRoutingSuccess(ArrayList<Route> route, int shortestRouteIndex) {
+        CameraUpdate center = CameraUpdateFactory.newLatLng(startPoint);
+        CameraUpdate zoom = CameraUpdateFactory.zoomTo(16);
+
+        if(polylines != null) {
+            polylines.clear();
+        }
+
+        PolylineOptions polylineOptions = new PolylineOptions();
+        LatLng polylineStartLatLng = null;
+        LatLng polylineEndLatLng = null;
+
+        polylines = new ArrayList<>();
+        //add route(s) to the map using polyline
+        for (int i = 0; i < route.size(); i++) {
+            if(i == shortestRouteIndex)
+            {
+                polylineOptions.color(R.color.colorPrimary);
+                polylineOptions.width(7);
+                polylineOptions.addAll(route.get(shortestRouteIndex).getPoints());
+                Polyline polyline = mMap.addPolyline(polylineOptions);
+                polylineStartLatLng = polyline.getPoints().get(0);
+                int k = polyline.getPoints().size();
+                polylineEndLatLng = polyline.getPoints().get(k-1);
+                polylines.add(polyline);
+            }
+        }
+
+//        //Add Marker on route starting position
+//        MarkerOptions startMarker = new MarkerOptions();
+//        startMarker.position(polylineStartLatLng);
+//        startMarker.title("My Location");
+//        mMap.addMarker(startMarker);
+//
+//        //Add Marker on route ending position
+//        MarkerOptions endMarker = new MarkerOptions();
+//        endMarker.position(polylineEndLatLng);
+//        endMarker.title("Destination");
+//        mMap.addMarker(endMarker);
+
+    }
+
+    @Override
+    public void onRoutingCancelled() {
+        findRoutes(startPoint, endPoint);
+    }
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+        findRoutes(startPoint, endPoint);
     }
 }
