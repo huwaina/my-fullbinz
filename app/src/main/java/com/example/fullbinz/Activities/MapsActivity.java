@@ -586,6 +586,7 @@ GoogleMap.OnMarkerClickListener, OnChartValueSelectedListener {
 
         mBarChart.setDrawBorders(true);
 
+
         XAxis xAxis = mBarChart.getXAxis();
         xAxis.setPosition(XAxis.XAxisPosition.TOP_INSIDE);
         xAxis.setTextSize(10f);
@@ -596,6 +597,7 @@ GoogleMap.OnMarkerClickListener, OnChartValueSelectedListener {
         xAxis.setCenterAxisLabels(true);
         xAxis.setLabelCount(6, true);
         xAxis.setGranularity(1f); // one hour
+        xAxis.setSpaceMax(10f);
         ValueFormatter xAxisFormatter = new ValueFormatter() {
             private final SimpleDateFormat mFormat = new SimpleDateFormat("dd MMM HH:mm", Locale.ENGLISH);
 
