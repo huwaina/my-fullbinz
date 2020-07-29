@@ -4,12 +4,12 @@
     android:layout_width="match_parent">
 
     <Button
-        android:id="@+id/showBinsBtn"
+        android:id="@+id/dashboardBtn"
         android:layout_marginTop="10dp"
         android:layout_centerHorizontal="true"
         android:layout_alignParentTop="true"
         android:background="@color/colorPrimary"
-        android:text="Show Bins"
+        android:text="Dashboard"
         android:textColor="@android:color/white"
         android:textStyle="bold"
         android:layout_width="wrap_content"

@@ -19,20 +19,16 @@ import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.webkit.WebView;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.android.volley.Request;
 import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 import com.directions.route.AbstractRouting;
 import com.directions.route.Route;
@@ -43,7 +39,6 @@ import com.example.fullbinz.Model.PointValue;
 import com.example.fullbinz.Model.TongSampah;
 import com.example.fullbinz.R;
 import com.example.fullbinz.UI.CustomInfoWindow;
-import com.example.fullbinz.Util.Constants;
 import com.example.fullbinz.Util.XYMarkerView;
 import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.components.Description;
@@ -82,10 +77,6 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -102,7 +93,7 @@ GoogleMap.OnMarkerClickListener, OnChartValueSelectedListener, GoogleApiClient.O
     private RequestQueue queue;
     private AlertDialog.Builder dialogBuilder;
     private AlertDialog dialog;
-    private Button showBinsBtn;
+    private Button dashboardBtn;
     private BarChart mBarChart;
     private TextView popList;
 
@@ -112,8 +103,8 @@ GoogleMap.OnMarkerClickListener, OnChartValueSelectedListener, GoogleApiClient.O
 
     private List<Polyline> polylines = null;
     LatLng myLocation;
-    LatLng startPoint = null;
-    LatLng endPoint = null;
+    protected LatLng startPoint;
+    protected LatLng endPoint;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -124,12 +115,12 @@ GoogleMap.OnMarkerClickListener, OnChartValueSelectedListener, GoogleApiClient.O
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
-        showBinsBtn = (Button) findViewById(R.id.showBinsBtn);
+        dashboardBtn = (Button) findViewById(R.id.dashboardBtn);
 
-        showBinsBtn.setOnClickListener(new View.OnClickListener() {
+        dashboardBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startActivity(new Intent(MapsActivity.this, BinsListActivity.class));
+                startActivity(new Intent(MapsActivity.this, DashboardActivity.class));
 
             }
         });
@@ -267,7 +258,7 @@ GoogleMap.OnMarkerClickListener, OnChartValueSelectedListener, GoogleApiClient.O
                     Marker marker = mMap.addMarker(markerOptions);
                     marker.setTag(keyNode.getKey());
 
-                    mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat, lon), 18));
+                    mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat, lon), 16));
                 }
             }
 
@@ -406,12 +397,12 @@ GoogleMap.OnMarkerClickListener, OnChartValueSelectedListener, GoogleApiClient.O
                 final TongSampah tongSampah = snapshot.getValue(TongSampah.class);
                 tongs.add(tongSampah);
 
-                Log.d("Coordinate: ", tongSampah.getLatitude() + ", " + tongSampah.getLongitude());
-                Log.d("Place: ", tongSampah.getPlace());
-                Log.d("Statusah: ", tongSampah.getStatus());
-                Log.d("Last collected: ", tongSampah.getLastcollected());
-                Log.d("Last updated: ", tongSampah.getLastupdated());
-                Log.d("By: ", tongSampah.getBy());
+//                Log.d("Coordinate: ", tongSampah.getLatitude() + ", " + tongSampah.getLongitude());
+//                Log.d("Place: ", tongSampah.getPlace());
+//                Log.d("Statusah: ", tongSampah.getStatus());
+//                Log.d("Last collected: ", tongSampah.getLastcollected());
+//                Log.d("Last updated: ", tongSampah.getLastupdated());
+//                Log.d("By: ", tongSampah.getBy());
 
                 stringBuilder.append(
                         "Location: " + tongSampah.getPlace() + "\n" +
@@ -419,7 +410,7 @@ GoogleMap.OnMarkerClickListener, OnChartValueSelectedListener, GoogleApiClient.O
                         "Last collected: " + tongSampah.getLastcollected() + "\n" +
                         "Collected by: " + tongSampah.getBy() + "\n");
 
-                stringBuilder.append("\n");
+//                stringBuilder.append("\n");
 
                 popList.setText(stringBuilder);
 
@@ -428,7 +419,7 @@ GoogleMap.OnMarkerClickListener, OnChartValueSelectedListener, GoogleApiClient.O
                 collectButton.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        if ((tongSampah.getStatus().equals("Empty"))){
+                        if (tongSampah.getStatus().equals("Empty") || tongSampah.getStatus().equals("Low")) {
                             AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
                             builder.setCancelable(true);
                             builder.setTitle("Bin level is low or empty");
@@ -437,10 +428,12 @@ GoogleMap.OnMarkerClickListener, OnChartValueSelectedListener, GoogleApiClient.O
                                     new DialogInterface.OnClickListener() {
                                         @Override
                                         public void onClick(DialogInterface dialog, int which) {
-                                            Toast.makeText(getApplicationContext(), "Routing to bin now",
-                                                    Toast.LENGTH_LONG).show();
+//                                            Toast.makeText(getApplicationContext(), "Routing to bin now",
+//                                                    Toast.LENGTH_LONG).show();
                                             //insert route to bin activity
                                             findRoutes(myLocation, destination);
+
+
                                         }
                                     });
 
@@ -455,10 +448,11 @@ GoogleMap.OnMarkerClickListener, OnChartValueSelectedListener, GoogleApiClient.O
                             AlertDialog dialog = builder.create();
                             dialog.show();
                         } else {
-                            Toast.makeText(getApplicationContext(), "Routing to bin now",
-                                    Toast.LENGTH_LONG).show();
+//                            Toast.makeText(getApplicationContext(), "Routing to bin now",
+//                                    Toast.LENGTH_LONG).show();
                             dialog.dismiss();
                             //insert route to bin activity
+                            findRoutes(myLocation, destination);
                         }
                     }
                 });
@@ -483,6 +477,7 @@ GoogleMap.OnMarkerClickListener, OnChartValueSelectedListener, GoogleApiClient.O
     }
 
     private void findRoutes(LatLng startPoint, LatLng endPoint) {
+
         if(startPoint == null || endPoint == null)
             Toast.makeText(MapsActivity.this,"Unable to get location",Toast.LENGTH_LONG).show();
         else {
@@ -623,7 +618,7 @@ GoogleMap.OnMarkerClickListener, OnChartValueSelectedListener, GoogleApiClient.O
         xAxis.setCenterAxisLabels(true);
         xAxis.setLabelCount(6, true);
         xAxis.setGranularity(1f); // one hour
-        xAxis.setSpaceMax(10f);
+        xAxis.setSpaceMax(0.8f);
         ValueFormatter xAxisFormatter = new ValueFormatter() {
             private final SimpleDateFormat mFormat = new SimpleDateFormat("dd MMM HH:mm", Locale.ENGLISH);
 
@@ -704,8 +699,10 @@ GoogleMap.OnMarkerClickListener, OnChartValueSelectedListener, GoogleApiClient.O
 
     @Override
     public void onRoutingSuccess(ArrayList<Route> route, int shortestRouteIndex) {
-        CameraUpdate center = CameraUpdateFactory.newLatLng(startPoint);
-        CameraUpdate zoom = CameraUpdateFactory.zoomTo(16);
+//        Toast.makeText(MapsActivity.this,"Success",Toast.LENGTH_LONG).show();
+
+        CameraUpdate location = CameraUpdateFactory.newLatLngZoom(myLocation, 17);
+        mMap.animateCamera(location);
 
         if(polylines != null) {
             polylines.clear();
@@ -730,6 +727,36 @@ GoogleMap.OnMarkerClickListener, OnChartValueSelectedListener, GoogleApiClient.O
                 polylines.add(polyline);
             }
         }
+
+        final AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
+        builder.setMessage("Open Google Maps?")
+                .setCancelable(true)
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    public void onClick(@SuppressWarnings("unused") final DialogInterface dialog, @SuppressWarnings("unused") final int id) {
+                        String latitude = String.valueOf(endPoint.latitude);
+                        String longitude = String.valueOf(endPoint.longitude);
+                        Uri gmmIntentUri = Uri.parse("google.navigation:q=" + latitude + "," + longitude);
+                        Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
+                        mapIntent.setPackage("com.google.android.apps.maps");
+
+                        try{
+                            if (mapIntent.resolveActivity(MapsActivity.this.getPackageManager()) != null) {
+                                startActivity(mapIntent);
+                            }
+                        }catch (NullPointerException e){
+//                            Log.e("onClick: NullPointerException: Couldn't open map." + e.getMessage());
+                            Toast.makeText(MapsActivity.this, "Couldn't open map", Toast.LENGTH_SHORT).show();
+                        }
+
+                    }
+                })
+                .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                    public void onClick(final DialogInterface dialog, @SuppressWarnings("unused") final int id) {
+                        dialog.cancel();
+                    }
+                });
+        final AlertDialog alert = builder.create();
+        alert.show();
 
 //        //Add Marker on route starting position
 //        MarkerOptions startMarker = new MarkerOptions();
