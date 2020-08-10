@@ -77,12 +77,15 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 
+
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
+import java.util.GregorianCalendar;
+import java.util.Calendar;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnInfoWindowClickListener,
 GoogleMap.OnMarkerClickListener, OnChartValueSelectedListener, GoogleApiClient.OnConnectionFailedListener, RoutingListener {
@@ -592,7 +595,71 @@ GoogleMap.OnMarkerClickListener, OnChartValueSelectedListener, GoogleApiClient.O
 //    }
 
     private void barchartSettings() {
+//        mBarChart.setTouchEnabled(true);
+//        mBarChart.setDragDecelerationFrictionCoef(0.9f);
+//
+//        // enable scaling and dragging
+//        mBarChart.setDragEnabled(true);
+//        mBarChart.setScaleEnabled(true);
+//        mBarChart.setDrawGridBackground(false);
+//        mBarChart.setHighlightPerDragEnabled(true);
+//
+//        // set an alternative background color
+//        mBarChart.setBackgroundColor(Color.WHITE);
+//        mBarChart.setViewPortOffsets(0f, 0f, 0f, 0f);
+//
+//        mBarChart.setDrawBorders(true);
+//
+//
+//        XAxis xAxis = mBarChart.getXAxis();
+//        xAxis.setPosition(XAxis.XAxisPosition.TOP_INSIDE);
+//        xAxis.setTextSize(10f);
+//        xAxis.setTextColor(Color.WHITE);
+//        xAxis.setDrawAxisLine(false);
+//        xAxis.setDrawGridLines(true);
+//        xAxis.setTextColor(Color.rgb(0, 0, 0));
+//        xAxis.setCenterAxisLabels(true);
+//        xAxis.setLabelCount(6, true);
+//        xAxis.setGranularity(1f); // one hour
+//        xAxis.setSpaceMax(0.8f);
+//        ValueFormatter xAxisFormatter = new ValueFormatter() {
+//            private final SimpleDateFormat mFormat = new SimpleDateFormat("dd MMM HH:mm", Locale.ENGLISH);
+//
+//            @Override
+//            public String getFormattedValue(float value) {
+//
+//                long millis = TimeUnit.HOURS.toMillis((long) value);
+//                return mFormat.format(new Date(millis));
+//            }
+//        };
+//        xAxis.setValueFormatter(xAxisFormatter);
+//
+//        YAxis leftAxis = mBarChart.getAxisLeft();
+//        leftAxis.setPosition(YAxis.YAxisLabelPosition.INSIDE_CHART);
+//        leftAxis.setTextColor(ColorTemplate.getHoloBlue());
+//        leftAxis.setDrawGridLines(false);
+//        leftAxis.setDrawLabels(false);
+//        leftAxis.setDrawAxisLine(false);
+//        leftAxis.setGranularityEnabled(true);
+//        leftAxis.setYOffset(-9f);
+//
+//        YAxis rightAxis = mBarChart.getAxisRight();
+//        rightAxis.setEnabled(false);
+//
+//        Legend legend = mBarChart.getLegend();
+//        legend.setEnabled(false);
+//
+//        Description description = mBarChart.getDescription();
+//        description.setEnabled(false);
+//
+//        XYMarkerView mv = new XYMarkerView(this, xAxisFormatter);
+//        mv.setChartView(mBarChart); // For bounds control
+//        mBarChart.setMarker(mv); // Set the marker to the chart
+        mBarChart.getDescription().setEnabled(false);
+
+        // enable touch gestures
         mBarChart.setTouchEnabled(true);
+
         mBarChart.setDragDecelerationFrictionCoef(0.9f);
 
         // enable scaling and dragging
@@ -605,49 +672,50 @@ GoogleMap.OnMarkerClickListener, OnChartValueSelectedListener, GoogleApiClient.O
         mBarChart.setBackgroundColor(Color.WHITE);
         mBarChart.setViewPortOffsets(0f, 0f, 0f, 0f);
 
-        mBarChart.setDrawBorders(true);
+        // add data
+//        seekBarX.setProgress(100);
+
+        // get the legend (only possible after setting data)
+        Legend l = mBarChart.getLegend();
+        l.setEnabled(false);
 
 
         XAxis xAxis = mBarChart.getXAxis();
         xAxis.setPosition(XAxis.XAxisPosition.TOP_INSIDE);
+//        xAxis.setTypeface(tfLight);
         xAxis.setTextSize(10f);
         xAxis.setTextColor(Color.WHITE);
         xAxis.setDrawAxisLine(false);
         xAxis.setDrawGridLines(true);
-        xAxis.setTextColor(Color.rgb(0, 0, 0));
+        xAxis.setTextColor(Color.rgb(255, 192, 56));
         xAxis.setCenterAxisLabels(true);
-        xAxis.setLabelCount(6, true);
         xAxis.setGranularity(1f); // one hour
-        xAxis.setSpaceMax(0.8f);
         ValueFormatter xAxisFormatter = new ValueFormatter() {
-            private final SimpleDateFormat mFormat = new SimpleDateFormat("dd MMM HH:mm", Locale.ENGLISH);
+          private final SimpleDateFormat mFormat = new SimpleDateFormat("dd MMM HH:mm", Locale.ENGLISH);
 
             @Override
             public String getFormattedValue(float value) {
 
-                long millis = TimeUnit.HOURS.toMillis((long) value);
-                return mFormat.format(new Date(millis));
+                Date currentTime = Calendar.getInstance().getTime();
+//                long millis = TimeUnit.HOURS.toMillis((long) value);
+                return mFormat.format(currentTime);
             }
         };
         xAxis.setValueFormatter(xAxisFormatter);
 
         YAxis leftAxis = mBarChart.getAxisLeft();
         leftAxis.setPosition(YAxis.YAxisLabelPosition.INSIDE_CHART);
+//        leftAxis.setTypeface(tfLight);
         leftAxis.setTextColor(ColorTemplate.getHoloBlue());
-        leftAxis.setDrawGridLines(false);
-        leftAxis.setDrawLabels(false);
-        leftAxis.setDrawAxisLine(false);
+        leftAxis.setDrawGridLines(true);
         leftAxis.setGranularityEnabled(true);
+        leftAxis.setAxisMinimum(0f);
+        leftAxis.setAxisMaximum(170f);
         leftAxis.setYOffset(-9f);
+        leftAxis.setTextColor(Color.rgb(255, 192, 56));
 
         YAxis rightAxis = mBarChart.getAxisRight();
         rightAxis.setEnabled(false);
-
-        Legend legend = mBarChart.getLegend();
-        legend.setEnabled(false);
-
-        Description description = mBarChart.getDescription();
-        description.setEnabled(false);
 
         XYMarkerView mv = new XYMarkerView(this, xAxisFormatter);
         mv.setChartView(mBarChart); // For bounds control

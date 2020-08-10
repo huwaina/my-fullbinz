@@ -31,6 +31,7 @@ import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.data.PieData;
 import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
+import com.github.mikephil.charting.formatter.LargeValueFormatter;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 import com.github.mikephil.charting.utils.ColorTemplate;
 import com.google.firebase.database.DataSnapshot;
@@ -48,7 +49,7 @@ import java.util.List;
 
 public class DashboardActivity extends AppCompatActivity {
     private TextView titleLine;
-
+    private BarChartItem chart;
 
 
     @Override
@@ -63,7 +64,7 @@ public class DashboardActivity extends AppCompatActivity {
         ArrayList<ChartItem> list = new ArrayList<>();
 
         // 30 items
-        for (int i = 0; i < 9; i++) {
+        for (int i = 0; i < 3; i++) {
 
             if (i % 3 == 0) {
                 list.add(new LineChartItem(generateDataLine(i + 1), DashboardActivity.this));
@@ -117,7 +118,7 @@ public class DashboardActivity extends AppCompatActivity {
 
         ArrayList<Entry> values1 = new ArrayList<>();
 
-        for (int i = 0; i < 30; i++) {
+        for (int i = 0; i < 15; i++) {
             values1.add(new Entry(i, (int) (Math.random() * 65) + 40));
         }
 
@@ -125,11 +126,13 @@ public class DashboardActivity extends AppCompatActivity {
         d1.setLineWidth(2.5f);
         d1.setCircleRadius(4.5f);
         d1.setHighLightColor(Color.rgb(244, 117, 117));
+        d1.setColor(ColorTemplate.VORDIPLOM_COLORS[0]);
+        d1.setCircleColor(ColorTemplate.VORDIPLOM_COLORS[0]);
         d1.setDrawValues(false);
 
         ArrayList<Entry> values2 = new ArrayList<>();
 
-        for (int i = 0; i < 30; i++) {
+        for (int i = 0; i < 15; i++) {
             values2.add(new Entry(i, (int) (Math.random() * 65) + 40));
         }
 
@@ -137,13 +140,58 @@ public class DashboardActivity extends AppCompatActivity {
         d2.setLineWidth(2.5f);
         d2.setCircleRadius(4.5f);
         d2.setHighLightColor(Color.rgb(244, 117, 117));
-        d2.setColor(ColorTemplate.VORDIPLOM_COLORS[0]);
-        d2.setCircleColor(ColorTemplate.VORDIPLOM_COLORS[0]);
+        d2.setColor(ColorTemplate.VORDIPLOM_COLORS[1]);
+        d2.setCircleColor(ColorTemplate.VORDIPLOM_COLORS[1]);
         d2.setDrawValues(false);
+
+        ArrayList<Entry> values3 = new ArrayList<>();
+
+        for (int i = 0; i < 15; i++) {
+            values3.add(new Entry(i, (int) (Math.random() * 65) + 40));
+        }
+
+        LineDataSet d3 = new LineDataSet(values3, "Fuel Cell");
+        d3.setLineWidth(2.5f);
+        d3.setCircleRadius(4.5f);
+        d3.setHighLightColor(Color.rgb(244, 117, 117));
+        d3.setColor(ColorTemplate.VORDIPLOM_COLORS[2]);
+        d3.setCircleColor(ColorTemplate.VORDIPLOM_COLORS[2]);
+        d3.setDrawValues(false);
+
+        ArrayList<Entry> values4 = new ArrayList<>();
+
+        for (int i = 0; i < 15; i++) {
+            values4.add(new Entry(i, (int) (Math.random() * 65) + 40));
+        }
+
+        LineDataSet d4 = new LineDataSet(values4, "IMEN");
+        d4.setLineWidth(2.5f);
+        d4.setCircleRadius(4.5f);
+        d4.setHighLightColor(Color.rgb(244, 117, 117));
+        d4.setColor(ColorTemplate.VORDIPLOM_COLORS[3]);
+        d4.setCircleColor(ColorTemplate.VORDIPLOM_COLORS[3]);
+        d4.setDrawValues(false);
+
+        ArrayList<Entry> values5 = new ArrayList<>();
+
+        for (int i = 0; i < 15; i++) {
+            values5.add(new Entry(i, (int) (Math.random() * 65) + 40));
+        }
+
+        LineDataSet d5 = new LineDataSet(values5, "Kolej Za'ba");
+        d5.setLineWidth(2.5f);
+        d5.setCircleRadius(4.5f);
+        d5.setHighLightColor(Color.rgb(244, 117, 117));
+        d5.setColor(ColorTemplate.VORDIPLOM_COLORS[4]);
+        d5.setCircleColor(ColorTemplate.VORDIPLOM_COLORS[4]);
+        d5.setDrawValues(false);
 
         ArrayList<ILineDataSet> sets = new ArrayList<>();
         sets.add(d1);
         sets.add(d2);
+        sets.add(d3);
+        sets.add(d4);
+        sets.add(d5);
 
         return new LineData(sets);
     }
@@ -157,11 +205,11 @@ public class DashboardActivity extends AppCompatActivity {
 
         ArrayList<BarEntry> entries = new ArrayList<>();
 
-        for (int i = 0; i < 12; i++) {
+        for (int i = 0; i < 10; i++) {
             entries.add(new BarEntry(i, (int) (Math.random() * 70) + 30));
         }
 
-        BarDataSet d = new BarDataSet(entries, "New DataSet " + cnt);
+        BarDataSet d = new BarDataSet(entries, "Bins");
         d.setColors(ColorTemplate.VORDIPLOM_COLORS);
         d.setHighLightAlpha(255);
 
@@ -179,9 +227,12 @@ public class DashboardActivity extends AppCompatActivity {
 
         ArrayList<PieEntry> entries = new ArrayList<>();
 
-        for (int i = 0; i < 4; i++) {
-            entries.add(new PieEntry((float) ((Math.random() * 70) + 30), "Quarter " + (i + 1)));
-        }
+
+        entries.add(new PieEntry((float) ((Math.random() * 70) + 40), "Cafe FKAB"));
+        entries.add(new PieEntry((float) ((Math.random() * 70) + 30), "BS 3"));
+        entries.add(new PieEntry((float) ((Math.random() * 70) + 30), "Fuel Cell"));
+        entries.add(new PieEntry((float) ((Math.random() * 70) + 10), "IMEN"));
+        entries.add(new PieEntry((float) ((Math.random() * 70) + 50), "Kolej Za'ba"));
 
         PieDataSet d = new PieDataSet(entries, "");
 
