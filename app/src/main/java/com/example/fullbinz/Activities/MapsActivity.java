@@ -1,6 +1,7 @@
 package com.example.fullbinz.Activities;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
@@ -70,6 +71,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.material.snackbar.Snackbar;
+import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -130,6 +132,7 @@ GoogleMap.OnMarkerClickListener, OnChartValueSelectedListener, GoogleApiClient.O
 
         queue = Volley.newRequestQueue(this);
         getTongSampahs();
+//        changeStatus();
     }
 
     /**
@@ -219,15 +222,16 @@ GoogleMap.OnMarkerClickListener, OnChartValueSelectedListener, GoogleApiClient.O
 
         database = FirebaseDatabase.getInstance();
         referenceTong = database.getReference("tong");
+        referenceChartTable = database.getReference("chartTable");
 
         referenceTong.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 List<String> keys = new ArrayList<>();
 
-                for (DataSnapshot keyNode : snapshot.getChildren()) {
+                for (final DataSnapshot keyNode : snapshot.getChildren()) {
                     keys.add(keyNode.getKey());
-                    TongSampah tongSampah = keyNode.getValue(TongSampah.class);
+                    final TongSampah tongSampah = keyNode.getValue(TongSampah.class);
                     tongs.add(tongSampah);
 
 //                    Log.d("Coordinate: ", tongSampah.getLatitude() + ", " + tongSampah.getLongitude());
@@ -248,13 +252,13 @@ GoogleMap.OnMarkerClickListener, OnChartValueSelectedListener, GoogleApiClient.O
                     markerOptions.snippet("Status: " + tongSampah.getStatus() + "\n"
                             + "Last updated: " + tongSampah.getLastupdated());
 
-                    //Change color of bins according to status
+//                    Change color of bins according to status
                     if ((tongSampah.getStatus().equals("Full"))) {
-                        CircleOptions circleOptions = new CircleOptions();
-                        circleOptions.center(new LatLng(tongSampah.getLatitude(), tongSampah.getLongitude()));
-                        circleOptions.radius(30000);
-                        circleOptions.strokeWidth(3.6f);
-                        circleOptions.fillColor(Color.RED);
+//                        CircleOptions circleOptions = new CircleOptions();
+//                        circleOptions.center(new LatLng(tongSampah.getLatitude(), tongSampah.getLongitude()));
+//                        circleOptions.radius(30000);
+//                        circleOptions.strokeWidth(3.6f);
+//                        circleOptions.fillColor(Color.RED);
                         markerOptions.icon(bitmapDescriptorFromVector(getApplicationContext(), R.drawable.ic_delete_red_24dp));
                     }
 
@@ -270,6 +274,32 @@ GoogleMap.OnMarkerClickListener, OnChartValueSelectedListener, GoogleApiClient.O
 
             }
         });
+    }
+
+    private void changeStatus(){
+        database = FirebaseDatabase.getInstance();
+        referenceTong = database.getReference("tong");
+        referenceChartTable = database.getReference("chartTable");
+
+        referenceChartTable.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                for(DataSnapshot myDataSnapshot : snapshot.getChildren()){
+                    PointValue pointValue = myDataSnapshot.getValue(PointValue.class);
+//                    barEntries.add(new BarEntry(pointValue.getxValue(), pointValue.getyValue()));
+                    if (pointValue.getyValue() > 70){
+//                        String tongMana = myDataSnapshot.getKey();
+                        referenceTong.child(myDataSnapshot.getKey()).child("status").setValue("Full");
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
+
     }
 
 
@@ -384,6 +414,7 @@ GoogleMap.OnMarkerClickListener, OnChartValueSelectedListener, GoogleApiClient.O
 
                 mBarChart.setData(barData);
                 mBarChart.invalidate();
+
             }
 
             @Override

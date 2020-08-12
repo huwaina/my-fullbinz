@@ -2,7 +2,7 @@ package com.example.fullbinz.Model;
 
 public class TongSampah {
     private String by;
-    private int id;
+    private String id;
     private String lastcollected;
     private String lastupdated;
     private double latitude;
@@ -13,7 +13,7 @@ public class TongSampah {
     public TongSampah() {
     }
 
-    public TongSampah(String by, int id, String lastcollected, String lastupdated, double latitude, double longitude, String place, String status) {
+    public TongSampah(String by, String id, String lastcollected, String lastupdated, double latitude, double longitude, String place, String status) {
         this.by = by;
         this.id = id;
         this.lastcollected = lastcollected;
@@ -32,11 +32,11 @@ public class TongSampah {
         this.by = by;
     }
 
-    public int getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(String id) {
         this.id = id;
     }
 
